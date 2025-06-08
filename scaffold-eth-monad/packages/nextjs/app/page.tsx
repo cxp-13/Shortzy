@@ -5,12 +5,12 @@ import type { NextPage } from "next";
 import { BoltIcon, BookOpenIcon, BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Address } from "~~/components/scaffold-eth";
 import { useState } from "react";
-import { useAccount, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
 // import ShortzyABI from "../contracts/Shortzy.json";
 import SHORTZY_ABI from "../contracts/Shortzy";
 
 
-const contractAddress = "0xB83ed689eA12D78cb1d6bC2Fc950Ec631cB82Df7";
+const contractAddress = "0x3d91e5AC2d499fF3Da3Cd2690705Cc7e163AF32D";
 const tokens = [
   { symbol: "DOGE", address: "0xba2ae424d960c26247dd6c32edc70b295c744c43", price: 0.07 },  // $0.07
   { symbol: "SHIBA", address: "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce", price: 0.00003 }, // $0.00003
@@ -19,13 +19,18 @@ const tokens = [
 const Home = () => {
   const { address: connectedAddress } = useAccount();
   const [selectedToken, setSelectedToken] = useState(tokens[0]);
-  const [usdcAmount, setUsdcAmount] = useState("100"); // 输入 USDC 数量，字符串方便输入框绑定
+  const [usdcAmount, setUsdcAmount] = useState("100");
   const [txHash, setTxHash] = useState<string | null>(null);
-  const [shortCount, setShortCount] = useState<number>(1337); // mock 做空总人数
+  const { data: shortingUsersCount } = useReadContract({
+    abi: SHORTZY_ABI,
+    address: contractAddress,
+    functionName: "getShortingUsersCount",
+  });
+
+  // 然后使用shortingUsersCount来显示做空用户数量
   const { writeContract, isPending, failureReason } = useWriteContract()
 
 
-  // 处理点击按钮调用合约
   const handleShort = () => {
     if (!usdcAmount || Number(usdcAmount) <= 0) {
       alert("请输入正确的做空 USDC 数量");
@@ -39,6 +44,7 @@ const Home = () => {
         args: [
           selectedToken.address,
           Number(usdcAmount),
+          Number(13)
         ],
       })
     } catch (e) {
@@ -51,7 +57,7 @@ const Home = () => {
       <h1 className="text-4xl font-bold text-center mb-4">🚀 Shortzy 做空平台</h1>
       <p className="text-center text-lg mb-6">
         目前已有{" "}
-        <span className="font-bold text-red-500">{shortCount}</span> 人做空！
+        <span className="font-bold text-red-500">{Number(shortingUsersCount)}</span> 人做空！
       </p>
 
       {/* Token 选择 */}
